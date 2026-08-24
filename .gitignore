@@ -1,0 +1,104 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environments
+.venv/
+venv/
+env/
+.conda/
+conda-env/
+
+# IDE and OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Local machine configuration
+configs/local/
+*.local.yaml
+*.local.yml
+*.local.json
+.env
+.env.*
+!.env.example
+
+# Data, third-party assets, simulators, checkpoints, and caches
+/data/
+/datasets/
+/third_party/
+/simulators/
+/assets/vendor/
+/checkpoints/
+/weights/
+/models/
+/cache/
+.caches/
+.huggingface/
+.wandb/
+wandb/
+
+# Formal run outputs remain on G: but are not committed
+/runs/
+/outputs/
+/artifacts/runtime/
+/logs/
+/tensorboard/
+
+# Large robotics recordings and binaries
+*.bag
+*.db3
+*.mcap
+*.fpl
+*.pcap
+*.pcd
+*.ply
+*.las
+*.laz
+*.h5
+*.hdf5
+*.npz
+*.npy
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.engine
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+*.7z
+
+# Build systems
+/build/
+install/
+log/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+
+# Isaac / Omniverse / MuJoCo generated state
+.omniverse/
+ov/
+kit/cache/
+isaac-sim-cache/
+.mujoco/
+
+# Temporary and scratch work
+/tmp/
+/scratch/
+*.tmp
+*.bak
+
+# Keep compact, curated report products under reports/ and artifacts/curated/
