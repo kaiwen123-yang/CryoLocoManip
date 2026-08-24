@@ -1,14 +1,20 @@
 # BorealTC Source, Data, Split, and Evaluator Closure (Stage 0B.1)
 
-Terminal state: **PASS_BOREALTC_SOURCE_CLOSURE**
+Terminal state: **PASS_BOREALTC_SOURCE_CLOSURE** (review_revision=R1)
 
-Executed against `docs/STAGE0B1_BOREALTC_SOURCE_CLOSURE.md`. All numbers in
-this document were computed by the tracked tools in `tools/borealtc/` from
-the pinned upstream checkout; expected paper/contract values appear only as
-comparison references. The full machine-readable evidence lives in the
-ignored run directory
-`runs/stage0b1/borealtc_source_closure/20260824T095031Z_767f1c5_borealtc-src-closure_21/`
-(SHA256 manifest included).
+Executed against `docs/STAGE0B1_BOREALTC_SOURCE_CLOSURE.md` and the
+corrective prompt `prompts/CODEX_01R_BOREALTC_PINNED_CLEAN_RERUN.md`. All
+numbers in this document were computed by the tracked tools in
+`tools/borealtc/` from the pinned upstream checkout; expected paper/contract
+values appear only as comparison references.
+
+Authoritative Stage 0B.1 formal run (clean commit `ac4fb7a`, `dirty=false`,
+exact upstream-lock core environment):
+`runs/stage0b1/borealtc_source_closure/20260824T103047Z_ac4fb7a_borealtc-src-closure-r1_21/`
+(SHA256 manifest included). The first run
+`20260824T095031Z_767f1c5_borealtc-src-closure_21/` is preserved unchanged
+as the parent/preliminary audit; every split-identity field and metric of
+the R1 rerun matches it exactly (see §9).
 
 ## 1. Locked identities
 
@@ -21,7 +27,8 @@ ignored run directory
 | Checkout | `third_party/BorealTC`, detached at the locked commit, worktree clean before and after every audit |
 | Canonical result arrays | `results/husky/results_CNN_hamming_mw_1.7.npy` (sha256 `cc1f732b…`), `results/husky/results_mamba_optim2_mw_1.7.npy` (sha256 `a437fac4…`) |
 | Canonical metric files | `metrics/husky/CNN-1700-hamming.dat`, `metrics/husky/mamba-1700-optim2.dat` |
-| Audit environment | Python 3.10.12 venv on G-drive; numpy 2.2.6, pandas 2.3.3, scipy 1.15.3, scikit-learn 1.7.2, tqdm 4.70.0, torch 2.13.0+cpu (upstream lock pinned numpy 1.26.4 / pandas 2.2.0 / scipy 1.12.0 / scikit-learn 1.4.0; see §8) |
+| Audit environment (authoritative, R1) | Python 3.10.12 venv `cache/venvs/borealtc-source-closure-pin`; exact upstream-lock core versions numpy 1.26.4, pandas 2.2.0, pyarrow 15.0.0, scipy 1.12.0, scikit-learn 1.4.0, tqdm 4.66.2 |
+| API-smoke environment | Python 3.10.12 venv `cache/venvs/borealtc-source-closure`; numpy 2.2.6, pandas 2.3.3, scikit-learn 1.7.2, torch 2.13.0+cpu (Torch required only by the public `borealtc.py` API; also the environment of the preserved parent run) |
 
 ## 2. Dataset inventory (data/borealtc)
 
@@ -196,12 +203,46 @@ Not established — and not evidence for the CryoLocoManip thesis:
 
 ## 8. Warnings and open items
 
-1. Audit ran on newer NumPy/pandas/scikit-learn than the upstream lock;
-   every closure target still reproduced (fold fingerprints and all Table
-   III metrics). Fold *identity* beyond class counts is not recoverable
-   from committed artifacts.
+1. RESOLVED in R1: the split/pipeline/evaluator closure now runs under the
+   exact upstream-lock core versions and matches the preliminary
+   (sklearn 1.7.2) run hash-for-hash (§9). Fold *identity* beyond class
+   counts remains unrecoverable from committed artifacts.
 2. `mamba-ssm`, `causal-conv1d`, `tsnecuda`, Lightning, Optuna were NOT
    installed; CNN/Mamba/LSTM/SVM training and checkpoint evaluation are
    deferred to Stage 0B.2 (upstream checkpoints exist but were not
-   executed here).
-3. Full limitations ledger: `limitations.json` in the run directory.
+   executed here). Model training itself has still not been rerun.
+3. Full limitations ledger: `limitations.json` in the authoritative run
+   directory.
+
+## 9. R1 corrective rerun (external review closure)
+
+The external review of the first pass identified two reproducibility gaps:
+(a) the audit executed under scikit-learn 1.7.2 instead of the upstream
+lock `scikit-learn==1.4.0` stack, and (b) the formal run id/manifest
+referenced base commit `767f1c5` rather than a clean commit containing the
+executed audit code. Corrective actions (prompt
+`CODEX_01R_BOREALTC_PINNED_CLEAN_RERUN.md`):
+
+- Exact-pin core environment created at
+  `cache/venvs/borealtc-source-closure-pin` (numpy 1.26.4, pandas 2.2.0,
+  pyarrow 15.0.0, scipy 1.12.0, scikit-learn 1.4.0, tqdm 4.66.2) and the
+  committed audit code re-executed **unmodified**.
+- Fresh formal run `20260824T103047Z_ac4fb7a_borealtc-src-closure-r1_21`
+  started from the clean committed tree at `ac4fb7a`
+  (`manifest.git.commit=ac4fb7a…`, `manifest.git.dirty=false`), with
+  `git_state.txt`, `command.sh`, `status.json`, split environment records,
+  freezes for both environments, full stdout/stderr logs, and a SHA256
+  manifest covering all run outputs plus the audit scripts used.
+- `version_pin_comparison.json` verdict:
+  **IDENTITY_MATCH_AND_METRICS_WITHIN_TOLERANCE** — pre-split order SHA256,
+  all 5×(train,test) fold-membership SHA256 values, per-fold partition
+  counts, run-overlap percentages, adjacency counts, slides/strides,
+  per-fold test-window counts, total windows (17 954), both confusion
+  matrices, artifact SHA256s, and upstream-smoke byte-identity all match
+  the parent run **exactly**; maximum metric delta 0.0 pp (float-identical
+  under scikit-learn 1.4.0 vs 1.7.2).
+- Public API smoke re-executed from the same clean commit in the Torch
+  environment (unchanged semantics; it remains distinct from the paper
+  preprocessing pipeline).
+- The parent run is preserved unchanged; the R1 run is the authoritative
+  Stage 0B.1 evidence.

@@ -5,9 +5,13 @@ arXiv `2403.16877` · code/data
 `https://github.com/norlab-ulaval/BorealTC` @
 `0146dcd9fa08c34a9075a80448ac04c0a947b568` (code MIT, BorealTC data CC0 1.0).
 
-Audit evidence: `docs/audits/BOREALTC_SOURCE_CLOSURE.md` and ignored run
-`runs/stage0b1/borealtc_source_closure/20260824T095031Z_767f1c5_borealtc-src-closure_21/`.
-No paper text is copied here; no PDF is committed.
+Audit evidence: `docs/audits/BOREALTC_SOURCE_CLOSURE.md` and the
+authoritative R1 formal run (clean commit `ac4fb7a`, `dirty=false`, exact
+upstream-lock core environment)
+`runs/stage0b1/borealtc_source_closure/20260824T103047Z_ac4fb7a_borealtc-src-closure-r1_21/`;
+the preliminary run
+`20260824T095031Z_767f1c5_borealtc-src-closure_21/` is preserved as its
+parent. No paper text is copied here; no PDF is committed.
 
 ## 1. Paper claims (CLAIMED_BY_SOURCE unless stated otherwise)
 
@@ -46,6 +50,13 @@ No paper text is copied here; no PDF is committed.
   support 3663/3384/3600/3654/3653).
 - Upstream AP scalar (18.61/18.35) reproduces but is a non-standard
   construction (class indices fed as scores); DIAGNOSTIC_ONLY.
+- R1 exact-version closure: the identical committed audit code re-executed
+  under the upstream lock stack (numpy 1.26.4, pandas 2.2.0, scipy 1.12.0,
+  scikit-learn 1.4.0) reproduces every split membership SHA256, count,
+  overlap statistic, confusion matrix, and metric with zero delta versus
+  the scikit-learn 1.7.2 preliminary run
+  (`version_pin_comparison.json`, verdict
+  IDENTITY_MATCH_AND_METRICS_WITHIN_TOLERANCE).
 
 Training itself was NOT rerun; end-to-end training closure is Stage 0B.2.
 Overall row claim level: **AUDITED** (metric recomputation from released
