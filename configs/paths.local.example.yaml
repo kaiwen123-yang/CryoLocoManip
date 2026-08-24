@@ -1,0 +1,17 @@
+# Copy to configs/local/paths.local.yaml and edit locally.
+# The local file is ignored by Git.
+
+project_root: /mnt/g/CryoLocoManip
+
+paths:
+  data_root: /mnt/g/CryoLocoManip/data
+  third_party_root: /mnt/g/CryoLocoManip/third_party
+  simulator_root: /mnt/g/CryoLocoManip/simulators
+  checkpoint_root: /mnt/g/CryoLocoManip/checkpoints
+  cache_root: /mnt/g/CryoLocoManip/cache
+  run_root: /mnt/g/CryoLocoManip/runs
+  output_root: /mnt/g/CryoLocoManip/outputs
+  local_config_root: /mnt/g/CryoLocoManip/configs/local
+
+# External G-drive roots may be added later only after they are declared,
+# checked for writability, and recorded in a run manifest.
