@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/kaiwen123-yang/CryoLocoManip/main/schemas/run_manifest.schema.json",
+  "title": "CryoLocoManip run manifest",
+  "description": "Minimum required fields for runs/<stage>/<method>/<run_id>/manifest.json as defined in docs/REPRODUCIBILITY_CONTRACT.md section 5. Components absent on a machine are recorded as the literal string 'unavailable'.",
+  "type": "object",
+  "required": [
+    "stage",
+    "method",
+    "run_id",
+    "git",
+    "command",
+    "working_directory",
+    "machine",
+    "versions",
+    "inputs",
+    "seeds",
+    "started_at_utc",
+    "ended_at_utc",
+    "exit_code",
+    "exclusions",
+    "parent_run_id"
+  ],
+  "properties": {
+    "stage": { "type": "string", "minLength": 1 },
+    "method": { "type": "string", "minLength": 1 },
+    "run_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Recommended form: YYYYMMDDTHHMMSSZ_<git-short-sha>_<config-id>_<seed>."
+    },
+    "git": {
+      "type": "object",
+      "required": ["commit", "dirty"],
+      "properties": {
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{7,40}$" },
+        "dirty": { "type": "boolean" },
+        "branch": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "command": { "type": "string", "minLength": 1 },
+    "working_directory": { "type": "string", "pattern": "^/" },
+    "machine": {
+      "type": "object",
+      "required": ["hostname_or_id"],
+      "properties": {
+        "hostname_or_id": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+    "versions": {
+      "type": "object",
+      "required": [
+        "os",
+        "kernel",
+        "python",
+        "compiler",
+        "cuda",
+        "gpu_driver",
+        "ros",
+        "simulator"
+      ],
+      "additionalProperties": { "type": "string" }
+    },
+    "inputs": {
+      "type": "object",
+      "required": ["dataset_identity", "config_identity", "evaluator_identity"],
+      "properties": {
+        "dataset_identity": { "type": "string" },
+        "config_identity": { "type": "string" },
+        "evaluator_identity": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "seeds": {
+      "type": "array",
+      "items": { "type": "integer" },
+      "minItems": 1
+    },
+    "started_at_utc": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$"
+    },
+    "ended_at_utc": {
+      "type": ["string", "null"],
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?Z$",
+      "description": "Null only while the run is still executing."
+    },
+    "exit_code": {
+      "type": ["integer", "null"],
+      "description": "Null only while the run is still executing."
+    },
+    "exclusions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Declared excluded or failed cases with reasons; empty array when none."
+    },
+    "parent_run_id": {
+      "type": ["string", "null"],
+      "description": "Identity of a parent or resumed run; null for a fresh run."
+    }
+  },
+  "additionalProperties": true
+}

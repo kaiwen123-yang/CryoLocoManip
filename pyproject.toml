@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cryolocomanip"
+version = "0.0.0"
+description = "Action-conditioned support-manipulation interaction modeling and trustworthy whole-body control in snow-ice environments (Stage 0 bootstrap skeleton)."
+readme = "README.md"
+requires-python = ">=3.10"
+# Stage 0.0 is workspace bootstrap only: no runtime dependencies yet.
+dependencies = []
+
+[project.optional-dependencies]
+# Lightweight development tools for later stages; the bootstrap task does not install them.
+dev = [
+  "pytest>=7",
+  "ruff>=0.4",
+  "pyyaml>=6",
+  "jsonschema>=4",
+]
+
+[project.urls]
+repository = "https://github.com/kaiwen123-yang/CryoLocoManip"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+src = ["src", "scripts", "tests"]
+
+[tool.ruff.lint]
+# Conservative rule set: pycodestyle errors/warnings, pyflakes, import order.
+select = ["E", "F", "W", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
