@@ -248,6 +248,14 @@ def _smoke_mamba(args, timer, result):
     fold = _build_fold_data("mamba", args.fold - 1, timer)
     L.seed_everything(_common.RANDOM_STATE)
     t0 = time.perf_counter()
+    # Loader I/O deviation (recorded in the result JSON): the released
+    # mamba_network uses num_workers=8 / persistent_workers=True, but
+    # fork-based DataLoader workers deadlock on this WSL2 host even when the
+    # parent process has never initialized CUDA (evidence:
+    # mamba_smoke_pretest_hang_evidence.txt). num_workers=0 changes only who
+    # executes __getitem__; the datamodule split, seeded sampler order, batch
+    # composition, and all numerical semantics are unchanged. The released
+    # worker configuration is a recorded Stage 0B.2B execution risk.
     datamodule = MambaDataModule(
         fold["train"],
         fold["test"],
@@ -256,16 +264,19 @@ def _smoke_mamba(args, timer, result):
         train_data_augmentation=None,
         valid_percent=MAMBA_TRAIN_OPT["valid_perc"],
         batch_size=MAMBA_TRAIN_OPT["minibatch_size"],
-        num_workers=8,
-        persistent_workers=True,
+        num_workers=0,
+        persistent_workers=False,
+    )
+    result["loader_deviation"] = (
+        "released num_workers=8/persistent_workers=True replaced by "
+        "num_workers=0 for this smoke: fork-based workers deadlock on WSL2 "
+        "(host limitation, recorded as 0B.2B risk); batch composition and "
+        "numerical semantics unchanged"
     )
     t1 = timer.lap("datamodule_init_s", t0)
 
-    # Fetch every needed batch BEFORE the first CUDA call: the released
-    # num_workers=8 DataLoaders fork their workers, and forking after CUDA
-    # initialization deadlocks on this WSL2 host (see run evidence). Batch
-    # composition is unchanged (same seeded sampler); only the harness's
-    # CUDA-initialization point moves.
+    # Batches are still fetched before the first CUDA call so the harness
+    # itself never mixes CUDA initialization into data loading.
     train_batch = next(iter(datamodule.train_dataloader()))
     val_batch = next(iter(datamodule.val_dataloader()))
     t2 = timer.lap("first_batch_fetch_s", t1)
