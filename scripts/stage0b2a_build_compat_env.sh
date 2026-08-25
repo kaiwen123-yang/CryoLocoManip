@@ -22,8 +22,8 @@ STEP="${1:?usage: core <pipeline-ref> | ssm <attempt-number>}"
 
 if [ "$STEP" = "core" ]; then
   PIPELINE_REF="${2:?pipeline git ref (commit) required for reproducibility}"
+  prepare_venv_lib64 "$VENV"
   python3.10 -m venv --copies "$VENV"
-  fix_venv_lib64 "$VENV"
   "$PY" -m pip install --upgrade pip 2>&1 | tee "$LOGDIR/compat_00_pip.log"
   "$PY" -m pip install --no-cache-dir torch==2.7.1+cu128 \
     torchvision==0.22.1+cu128 --index-url https://download.pytorch.org/whl/cu128 \

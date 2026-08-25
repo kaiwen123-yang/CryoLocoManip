@@ -23,8 +23,8 @@ LOGDIR="$REPO/logs/stage0b2a/envbuild"
 STEP="${1:?usage: core | ssm <attempt-number>}"
 
 if [ "$STEP" = "core" ]; then
+  prepare_venv_lib64 "$VENV"
   python3.10 -m venv --copies "$VENV"
-  fix_venv_lib64 "$VENV"
   "$PY" -m pip install --upgrade pip 2>&1 | tee "$LOGDIR/declared_00_pip.log"
   # Mirror the Dockerfile install order: packaging/torch/torchvision/wheel
   # first (torch deliberately left unpinned so the resolver documents the

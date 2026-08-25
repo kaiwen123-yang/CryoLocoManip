@@ -15,12 +15,14 @@ export PYTHONPATH=
 mkdir -p "$PIP_CACHE_DIR" "$XDG_CACHE_HOME" "$TMPDIR" "$TORCH_EXTENSIONS_DIR" \
   "$REPO/logs/stage0b2a/envbuild"
 
-# drvfs cannot hold the lib64 -> lib symlink that venv creates on Linux;
-# replace a broken symlink with a real directory (documented workaround).
-fix_venv_lib64() {
+# drvfs refuses the lib64 -> lib symlink that the venv module creates on
+# Linux (EPERM aborts `python -m venv`). Pre-creating lib64 as a real
+# directory makes venv skip the symlink (it only links when the path is
+# absent) — the documented drvfs workaround. Call BEFORE `python -m venv`.
+prepare_venv_lib64() {
   local venv="$1"
-  if [ -L "$venv/lib64" ] && [ ! -e "$venv/lib64" ]; then
+  if [ -L "$venv/lib64" ]; then
     rm "$venv/lib64"
   fi
-  [ -e "$venv/lib64" ] || mkdir -p "$venv/lib64"
+  mkdir -p "$venv/lib64"
 }
