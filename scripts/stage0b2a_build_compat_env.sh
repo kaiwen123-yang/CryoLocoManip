@@ -51,12 +51,19 @@ elif [ "$STEP" = "ssm" ]; then
   # declared probe env, and pip's built-wheel cache otherwise re-installs the
   # torch-2.2-ABI binaries it built there (undefined c10 symbols under torch
   # 2.7) without ever running setup.py or the FORCE_BUILD/NVCC flags.
+  #
+  # Source: the GitHub v1.2.0.post1 release tags. The PyPI sdists of both
+  # packages omit csrc/ entirely (CI sdists built with SKIP_CUDA_BUILD), so
+  # a real CUDA compile from PyPI is structurally impossible; the tags are
+  # the canonical source of the identical released versions:
+  #   causal-conv1d v1.2.0.post1 = 02e84be1019ff75891c15aadf86b55d826cf065f
+  #   mamba (mamba-ssm) v1.2.0.post1 = 34076d664838588a3c97727b263478ab9f621a07
   "$PY" -m pip install -v --no-cache-dir --no-build-isolation \
-    causal_conv1d==1.2.0.post1 2>&1 \
-    | tee "$LOGDIR/compat_causal_conv1d_attempt${ATTEMPT}.log" | tail -5
+    "causal_conv1d @ git+https://github.com/Dao-AILab/causal-conv1d@v1.2.0.post1" \
+    2>&1 | tee "$LOGDIR/compat_causal_conv1d_attempt${ATTEMPT}.log" | tail -5
   "$PY" -m pip install -v --no-cache-dir --no-build-isolation \
-    mamba-ssm==1.2.0.post1 2>&1 \
-    | tee "$LOGDIR/compat_mamba_ssm_attempt${ATTEMPT}.log" | tail -5
+    "mamba-ssm @ git+https://github.com/state-spaces/mamba@v1.2.0.post1" \
+    2>&1 | tee "$LOGDIR/compat_mamba_ssm_attempt${ATTEMPT}.log" | tail -5
   "$PY" -m pip freeze 2>/dev/null > "$LOGDIR/requirements_compat.freeze.txt"
   echo "COMPAT_SSM_DONE attempt=$ATTEMPT"
 else
