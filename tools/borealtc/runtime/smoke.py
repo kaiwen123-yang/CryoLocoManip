@@ -174,8 +174,14 @@ def _one_batch_cycle(model, batch_to_device, train_batch, val_batch, grad_clip, 
     """One faithful train step + one validation forward. Returns measurements."""
     import torch
 
+    from tools.borealtc.compat.torch_api import released_scheduler_compat
+
     device_params_before = [p.detach().clone() for p in model.parameters()]
-    cfg = model.configure_optimizers()
+    # The released configure_optimizers() call site is executed unchanged;
+    # the compat context only strips the print-only `verbose` kwarg that
+    # torch >= 2.7 removed (feature-detected, no-op on era-matched torch).
+    with released_scheduler_compat() as adapter:
+        cfg = model.configure_optimizers()
     optimizer = cfg["optimizer"]
     scheduler_name = type(cfg["lr_scheduler"]["scheduler"]).__name__
 
@@ -230,6 +236,7 @@ def _one_batch_cycle(model, batch_to_device, train_batch, val_batch, grad_clip, 
         "optimizer_class": type(optimizer).__name__,
         "optimizer_lr": optimizer.param_groups[0]["lr"],
         "scheduler_class": scheduler_name,
+        "scheduler_verbose_compat_adapter": adapter,
         "gradient_clip_val": grad_clip,
         "logits_finite": bool(torch.isfinite(logits).all().item()),
         "train_logits_shape": list(logits.shape),
