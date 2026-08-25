@@ -47,9 +47,15 @@ elif [ "$STEP" = "ssm" ]; then
   export MAMBA_FORCE_BUILD=TRUE
   export NVCC_APPEND_FLAGS="-gencode arch=compute_120,code=sm_120"
   export MAX_JOBS=4
-  "$PY" -m pip install -v --no-build-isolation causal_conv1d==1.2.0.post1 2>&1 \
+  # --no-cache-dir is mandatory here: PIP_CACHE_DIR is shared with the
+  # declared probe env, and pip's built-wheel cache otherwise re-installs the
+  # torch-2.2-ABI binaries it built there (undefined c10 symbols under torch
+  # 2.7) without ever running setup.py or the FORCE_BUILD/NVCC flags.
+  "$PY" -m pip install -v --no-cache-dir --no-build-isolation \
+    causal_conv1d==1.2.0.post1 2>&1 \
     | tee "$LOGDIR/compat_causal_conv1d_attempt${ATTEMPT}.log" | tail -5
-  "$PY" -m pip install -v --no-build-isolation mamba-ssm==1.2.0.post1 2>&1 \
+  "$PY" -m pip install -v --no-cache-dir --no-build-isolation \
+    mamba-ssm==1.2.0.post1 2>&1 \
     | tee "$LOGDIR/compat_mamba_ssm_attempt${ATTEMPT}.log" | tail -5
   "$PY" -m pip freeze 2>/dev/null > "$LOGDIR/requirements_compat.freeze.txt"
   echo "COMPAT_SSM_DONE attempt=$ATTEMPT"
