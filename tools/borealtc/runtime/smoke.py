@@ -260,6 +260,29 @@ def _smoke_mamba(args, timer, result):
         persistent_workers=True,
     )
     t1 = timer.lap("datamodule_init_s", t0)
+
+    # Fetch every needed batch BEFORE the first CUDA call: the released
+    # num_workers=8 DataLoaders fork their workers, and forking after CUDA
+    # initialization deadlocks on this WSL2 host (see run evidence). Batch
+    # composition is unchanged (same seeded sampler); only the harness's
+    # CUDA-initialization point moves.
+    train_batch = next(iter(datamodule.train_dataloader()))
+    val_batch = next(iter(datamodule.val_dataloader()))
+    t2 = timer.lap("first_batch_fetch_s", t1)
+
+    if args.dump_test_batch:
+        import numpy as np  # noqa: PLC0415
+
+        test_batch = next(iter(datamodule.test_dataloader()))
+        xb, yb = test_batch
+        np.savez(
+            args.dump_test_batch,
+            imu=xb["imu"].numpy(),
+            pro=xb["pro"].numpy(),
+            labels=yb.numpy(),
+        )
+        result["test_batch_dumped_to"] = args.dump_test_batch
+
     model = MambaTerrain(
         d_model_imu=MAMBA_TRAIN_OPT["d_model_imu"],
         d_model_pro=MAMBA_TRAIN_OPT["d_model_pro"],
@@ -276,23 +299,9 @@ def _smoke_mamba(args, timer, result):
         focal_loss_alpha=MAMBA_TRAIN_OPT["focal_loss_alpha"],
         focal_loss_gamma=MAMBA_TRAIN_OPT["focal_loss_gamma"],
     ).to(args.device)
-    timer.lap("model_init_s", t1)
-
-    train_batch = next(iter(datamodule.train_dataloader()))
-    val_batch = next(iter(datamodule.val_dataloader()))
-
-    if args.dump_test_batch:
-        import numpy as np  # noqa: PLC0415
-
-        test_batch = next(iter(datamodule.test_dataloader()))
-        xb, yb = test_batch
-        np.savez(
-            args.dump_test_batch,
-            imu=xb["imu"].numpy(),
-            pro=xb["pro"].numpy(),
-            labels=yb.numpy(),
-        )
-        result["test_batch_dumped_to"] = args.dump_test_batch
+    timer.lap("model_init_s", t2)
+    if args.device.startswith("cuda"):
+        torch.cuda.reset_peak_memory_stats()
 
     def to_device(batch):
         x, y = batch
@@ -366,6 +375,13 @@ def _smoke_cnn(args, timer, result):
         persistent_workers=False,
     )
     t1 = timer.lap("datamodule_init_s", t0)
+
+    # Released CNN loaders use num_workers=0 (no fork), but batches are still
+    # fetched before the first CUDA call for symmetry with the Mamba smoke.
+    train_batch = next(iter(datamodule.train_dataloader()))
+    val_batch = next(iter(datamodule.val_dataloader()))
+    t1 = timer.lap("first_batch_fetch_s", t1)
+
     n_samples, n_freq, n_wind, in_size = fold["train"]["data"].shape
     model = CNNTerrain(
         in_size=in_size,
@@ -382,9 +398,8 @@ def _smoke_cnn(args, timer, result):
         dropout=CNN_TRAIN_OPT["dropout"],
     ).to(args.device)
     timer.lap("model_init_s", t1)
-
-    train_batch = next(iter(datamodule.train_dataloader()))
-    val_batch = next(iter(datamodule.val_dataloader()))
+    if args.device.startswith("cuda"):
+        torch.cuda.reset_peak_memory_stats()
 
     def to_device(batch):
         x, y = batch
@@ -437,15 +452,16 @@ def main() -> int:
 
     import torch
 
-    sync = torch.cuda.synchronize if args.device.startswith("cuda") else (lambda: None)
+    def sync():
+        # Never the first CUDA call: synchronizing only an already-initialized
+        # context keeps the pre-fork phase CUDA-clean (see WSL2 fork deadlock
+        # note in the smoke functions).
+        if args.device.startswith("cuda") and torch.cuda.is_initialized():
+            torch.cuda.synchronize()
+
     timer = _Timer(sync)
     result["torch_version"] = torch.__version__
     result["torch_cuda_version"] = torch.version.cuda
-    result["cuda_available"] = torch.cuda.is_available()
-    if args.device.startswith("cuda"):
-        result["gpu_name"] = torch.cuda.get_device_name(0)
-        result["gpu_capability"] = list(torch.cuda.get_device_capability(0))
-        torch.cuda.reset_peak_memory_stats()
 
     status = "PASS"
     try:
@@ -463,7 +479,10 @@ def main() -> int:
 
     result["timings_s"] = timer.laps
     result["peak_cpu_rss_mib"] = _rss_mib()
-    if args.device.startswith("cuda") and torch.cuda.is_available():
+    if args.device.startswith("cuda") and torch.cuda.is_initialized():
+        result["cuda_available"] = True
+        result["gpu_name"] = torch.cuda.get_device_name(0)
+        result["gpu_capability"] = list(torch.cuda.get_device_capability(0))
         result["peak_gpu_mem_allocated_mib"] = round(
             torch.cuda.max_memory_allocated() / (1024**2), 1
         )
